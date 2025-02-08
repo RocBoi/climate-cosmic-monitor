@@ -1,1 +1,41 @@
+from fastapi import FastAPI, WebSocket
+import requests
 
+app = FastAPI()
+
+# External API URLs
+NOAA_API = "https://api.weather.gov/"
+USGS_EARTHQUAKE_API = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/significant_week.geojson"
+NASA_API = "https://api.nasa.gov/neo/rest/v1/feed?api_key=DEMO_KEY"  # Replace with your API key
+
+@app.get("/weather/{location}")
+async def get_weather(location: str):
+    """Fetch live weather data based on location"""
+    response = requests.get(f"{NOAA_API}points/{location}")
+    return response.json()
+
+@app.get("/earthquakes")
+async def get_earthquakes():
+    """Fetch latest earthquake data"""
+    response = requests.get(USGS_EARTHQUAKE_API)
+    return response.json()
+
+@app.get("/space-events")
+async def get_space_events():
+    """Fetch latest space events (asteroids, solar activity)"""
+    response = requests.get(NASA_API)
+    return response.json()
+
+@app.websocket("/realtime")
+async def websocket_endpoint(websocket: WebSocket):
+    """WebSocket for real-time updates"""
+    await websocket.accept()
+    while True:
+        data = {"message": "Live data update..."}
+        await websocket.send_json(data)
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+ 
