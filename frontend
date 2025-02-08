@@ -1,1 +1,58 @@
+import React, { useState, useEffect } from "react";
 
+const API_URL = "http://localhost:8000";
+
+function App() {
+  const [weather, setWeather] = useState(null);
+  const [earthquakes, setEarthquakes] = useState([]);
+  const [spaceEvents, setSpaceEvents] = useState([]);
+  const [liveUpdates, setLiveUpdates] = useState("Waiting for data...");
+
+  useEffect(() => {
+    fetch(`${API_URL}/weather/34.0522,-118.2437`)
+      .then((res) => res.json())
+      .then((data) => setWeather(data));
+
+    fetch(`${API_URL}/earthquakes`)
+      .then((res) => res.json())
+      .then((data) => setEarthquakes(data.features || []));
+
+    fetch(`${API_URL}/space-events`)
+      .then((res) => res.json())
+      .then((data) => setSpaceEvents(data.near_earth_objects || []));
+
+    // WebSocket for real-time updates
+    const ws = new WebSocket("ws://localhost:8000/realtime");
+    ws.onmessage = (event) => setLiveUpdates(event.data);
+    return () => ws.close();
+  }, []);
+
+  return (
+    <div>
+      <h1>Climate & Cosmic Monitor</h1>
+      <h2>Weather Data</h2>
+      <pre>{JSON.stringify(weather, null, 2)}</pre>
+
+      <h2>Recent Earthquakes</h2>
+      <ul>
+        {earthquakes.map((eq) => (
+          <li key={eq.id}>{eq.properties.place} - Magnitude {eq.properties.mag}</li>
+        ))}
+      </ul>
+
+      <h2>Space Events</h2>
+      <ul>
+        {Object.values(spaceEvents).map((asteroid, index) => (
+          <li key={index}>{asteroid[0].name} - {asteroid[0].close_approach_date}</li>
+        ))}
+      </ul>
+
+      <h2>Live Updates</h2>
+      <p>{liveUpdates}</p>
+    </div>
+  );
+}
+
+export default App;
+
+ 
